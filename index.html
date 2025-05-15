@@ -1,0 +1,422 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ledger of Lust - Mark's Soiree</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Lora', serif;
+            background: linear-gradient(to bottom, #000000, #4A0E0E);
+            color: #FFFFFF;
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid #D4A017;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 0 15px rgba(212, 160, 23, 0.3);
+        }
+        h1 {
+            font-family: 'Bebas Neue', sans-serif;
+            color: #D4A017;
+            text-align: center;
+            font-size: 28px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .art-deco-divider {
+            width: 50%;
+            height: 2px;
+            background: #D4A017;
+            margin: 10px auto;
+            position: relative;
+        }
+        .art-deco-divider:before, .art-deco-divider:after {
+            content: '';
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: #D4A017;
+            top: -4px;
+            transform: rotate(45deg);
+        }
+        .art-deco-divider:before {
+            left: 0;
+        }
+        .art-deco-divider:after {
+            right: 0;
+        }
+        .activity {
+            display: flex;
+            flex-direction: column;
+            padding: 15px 0;
+            border-bottom: 1px solid rgba(212, 160, 23, 0.2);
+        }
+        .activity:last-child {
+            border-bottom: none;
+        }
+        .activity-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        .activity input[type="checkbox"] {
+            margin-right: 10px;
+            accent-color: #D4A017;
+            width: 20px;
+            height: 20px;
+        }
+        .activity .name {
+            flex: 1;
+            font-size: 18px;
+            font-weight: 700;
+            color: #D4A017;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 1px solid #D4A017;
+            padding-bottom: 2px;
+        }
+        .activity .description {
+            font-size: 12px;
+            font-weight: 400;
+            font-style: italic;
+            color: #FFFFFF;
+            margin-top: 5px;
+            line-height: 1.3;
+        }
+        .activity .points {
+            color: #D4A017;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        #total-points {
+            text-align: center;
+            font-size: 20px;
+            color: #D4A017;
+            margin-top: 20px;
+            font-family: 'Lora', serif;
+        }
+        @media (max-width: 400px) {
+            h1 {
+                font-size: 24px;
+            }
+            .activity .name {
+                font-size: 16px;
+            }
+            .activity .description, .activity .points {
+                font-size: 11px;
+            }
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Lora:ital@1&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <h1>Ledger of Lust</h1>
+        <div class="art-deco-divider"></div>
+        <div class="activity">
+            <div class="activity-header">
+                <input type="checkbox" id="activity1" onchange="updatePoints()">
+                <label for="activity1" class="name">Dressed With Flesh</label>
+                <span class="points">3</span>
+            </div>
+            <div class="description">Arrive in a daring outfit that shows off skin—silk, lace, or satin in dark hues like ruby red, emerald green, or black. The sexier, the better.</div>
+        </div>
+        <div class="activity">
+            <div class="activity-header">
+                <input type="checkbox" id="activity2" onchange="updatePoints()">
+                <label for="activity2" class="name">Hug a Fellow Immortal</label>
+                <span class="points">2</span>
+            </div>
+            <div class="description">Embrace another guest with a lingering, seductive hug, whispering a playful compliment in their ear.</div>
+        </div>
+        <div class="activity">
+            <div class="activity-header">
+                <input type="checkbox" id="activity3" onchange="updatePoints()">
+                <label for="activity3" class="name">Give a Kiss Of Eternal Life</label>
+                <span class="points">5</span>
+            </div>
+            <div class="description">Share a kiss with someone—on the cheek, lips, or hand—making it as flirty or dramatic as you dare.</div>
+        </div>
+        <div class="activity">
+            <div class="activity-header">
+                <input type="checkbox" id="activity4" onchange="updatePoints()">
+                <label for="activity4" class="name">Take a Shot in a Sexy Way</label>
+                <span class="points">4</span>
+            </div>
+            <div class="description">Sip a shot slowly, locking eyes with someone across the room, or let someone pour it for you with a sultry twist.</div>
+        </div>
+        <div class="activity">
+            <div class="activity-header">
+                <input type="checkbox" id="activity5" onchange="updatePoints()">
+                <label for="activity5" class="name">Make Love to Your Drink</label>
+                <span class="points">5</span>
+            </div>
+            <div class="description">Caress your glass, sip it sensually, or whisper sweet nothings to it—make everyone blush with your performance.</div>
+        </div>
+        <div class="activity">
+            <div class="activity-header">
+                <input type="checkbox" id="activity6" onchange="updatePoints()">
+                <label for="activity6" class="name">Bite a Mortal</label>
+                <span class="points">6</span>
+            </div>
+            <div class="description">Playfully “bite” someone’s neck, wrist, or arm (a light nibble or kiss)—bonus points if they’re a stranger who’s in on the fun.</div>
+        </div>
+        <div class="activity">
+            <div class="activity-header">
+                <input type="checkbox" id="activity7" onchange="updatePoints()">
+                <label for="activity7" class="name">Dance on a Pole</label>
+                <span class="points">7</span>
+            </div>
+            <div class="description">Find a pole (or improvise with a wall or chair) and give a sultry dance performance for at least 30 seconds.</div>
+        </div>
+        <div class="activity">
+            <div class="activity-header">
+                <input type="checkbox" id="activity8" onchange="updatePoints()">
+                <label for="activity8" class="name">Seduce with a Glance</label>
+                <span class="points">3</span>
+            </div>
+            <div class="description">Lock eyes with someone across the bar for 10 seconds, giving your best smoldering, immortal stare—make them feel like prey.</div>
+        </div>
+        <div class="activity">
+            <div class="activity-header">
+                <input type="checkbox" id="activity9" onchange="updatePoints()">
+                <label for="activity9" class="name">Whisper a Dark Secret</label>
+                <span class="points">2</span>
+            </div>
+            <div class="description">Share a naughty or playful “secret” with another guest in a hushed, seductive tone—bonus points if it makes them laugh or blush.</div>
+        </div>
+        <div class="activity">
+            <div class="activity-header">
+                <input type="checkbox" id="activity10" onchange="updatePoints()">
+                <label for="activity10" class="name">Steal a Sip</label>
+                <span class="points">4</span>
+            </div>
+            <div class="description">Charm someone into letting you sip their drink—use your immortal allure to convince them.</div>
+        </div>
+        <div class="activity">
+            <div class="activity-header">
+                <input type="checkbox" id="activity11" onchange="updatePoints()">
+                <label for="activity11" class="name">Toast to Eternity</label>
+                <span class="points">3</span>
+            </div>
+            <div class="description">Lead a dramatic group toast at one stop, raising your glass to “eternal pleasures” with a sultry speech.</div>
+        </div>
+        <div class="activity">
+            <div class="activity-header">
+                <input type="checkbox" id="activity12" onchange="updatePoints()">
+                <label for="activity12" class="name">Dance with a Stranger</label>
+                <span class="points">5</span>
+            </div>
+            <div class="description">Pull a “mortal” (a non-guest) onto the dance floor for a quick, flirty dance—let your immortal charm shine.</div>
+        </div>
+        <div class="activity">
+            <div class="activity-header">
+                <input type="checkbox" id="activity13" onchange="updatePoints()">
+                <label for="activity13" class="name">Leave a Mark</label>
+                <span class="points">4</span>
+            </div>
+            <div class="description">Leave a lipstick mark or a playful note on someone’s napkin, glass, or skin (with consent)—a memento of your immortal presence.</div>
+        </div>
+        <div class="activity">
+            <div class="activity-header">
+                <input type="checkbox" id="activity14" onchange="updatePoints()">
+                <label for="activity14" class="name">Channel Your Inner Mikaelson</label>
+                <span class="points">3</span>
+            </div>
+            <div class="description">Strike a dramatic pose (think Klaus or Rebekah) and have someone snap a photo—bonus points for a group pose.</div>
+        </div>
+        <div class="activity">
+            <div class="activity-header">
+                <input type="checkbox" id="activity15" onchange="updatePoints()">
+                <label for="activity15" class="name">Sip from Another’s Glass</label>
+                <span class="points">4</span>
+            </div>
+            <div class="description">Share a drink from someone else’s glass in a flirty, intimate way—make it a moment.</div>
+        </div>
+        <div class="activity">
+            <div class="activity-header">
+                <input type="checkbox" id="activity16" onchange="updatePoints()">
+                <label for="activity16" class="name">Unleash A Dark Laugh</label>
+                <span class="points">3</span>
+            </div>
+            <div class="description">Let out a deep, villainous laugh (think immortal drama) loud enough for others to notice—own the room.</div>
+        </div>
+        <div class="activity">
+            <div class="activity-header">
+                <input type="checkbox" id="activity17" onchange="updatePoints()">
+                <label for="activity17" class="name">Caress the Night</label>
+                <span class="points">5</span>
+            </div>
+            <div class="description">Run your fingers along someone’s arm, shoulder, or back (with consent) as if savoring their “mortal essence”—keep it sensual.</div>
+        </div>
+        <div class="activity">
+            <div class="activity-header">
+                <input type="checkbox" id="activity18" onchange="updatePoints()">
+                <label for="activity18" class="name">Claim a Throne</label>
+                <span class="points">3</span>
+            </div>
+            <div class="description">Sit on a bar stool or chair like it’s your immortal throne, commanding attention for a full minute with your presence.</div>
+        </div>
+        <div class="activity">
+            <div class="activity-header">
+                <input type="checkbox" id="activity19" onchange="updatePoints()">
+                <label for="activity19" class="name">Enchant with an Elixir</label>
+                <span class="points">4</span>
+            </div>
+            <div class="description">Order a drink for someone else at the bar (or from the bus’s elixirs) and present it to them with a seductive compliment, like “This matches the fire in your eyes.”</div>
+        </div>
+        <div class="activity">
+            <div class="activity-header">
+                <input type="checkbox" id="activity20" onchange="updatePoints()">
+                <label for="activity20" class="name">Share a Forbidden Sip</label>
+                <span class="points">4</span>
+            </div>
+            <div class="description">Take a sip of your drink, then offer it to another immortal with a sultry challenge: “Taste the darkness—can you handle it?”</div>
+        </div>
+        <div class="activity">
+            <div class="activity-header">
+                <input type="checkbox" id="activity21" onchange="updatePoints()">
+                <label for="activity21" class="name">Drip with Desire</label>
+                <span class="points">6</span>
+            </div>
+            <div class="description">Let a drop of your drink fall onto your finger, then lick it off slowly while maintaining eye contact with someone—make it a tantalizing moment.</div>
+        </div>
+        <div class="activity">
+            <div class="activity-header">
+                <input type="checkbox" id="activity22" onchange="updatePoints()">
+                <label for="activity22" class="name">Seduce the Bartender</label>
+                <span class="points">5</span>
+            </div>
+            <div class="description">Order a drink with a flirty line (e.g., “Make it quick, darling—I’m dying to taste it”), then wink or blow a kiss when they hand it to you.</div>
+        </div>
+        <div class="activity">
+            <div class="activity-header">
+                <input type="checkbox" id="activity23" onchange="updatePoints()">
+                <label for="activity23" class="name">Pass the Poison</label>
+                <span class="points">8</span>
+            </div>
+            <div class="description">Share a drink with another immortal by pouring a little into their mouth, call it “sharing the poison” with a mischievous smirk.</div>
+        </div>
+        <div class="activity">
+            <div class="activity-header">
+                <input type="checkbox" id="activity24" onchange="updatePoints()">
+                <label for="activity24" class="name">Garnish with Glamour</label>
+                <span class="points">5</span>
+            </div>
+            <div class="description">Pluck a garnish (like a cherry or lemon slice) from your drink, eat it seductively, and offer another to someone with a playful dare.</div>
+        </div>
+        <div class="activity">
+            <div class="activity-header">
+                <input type="checkbox" id="activity25" onchange="updatePoints()">
+                <label for="activity25" class="name">Immortal Flash</label>
+                <span class="points">10</span>
+            </div>
+            <div class="description">Briefly flash a glimpse of skin (e.g., lift your shirt to show your midriff or lower a strap to reveal a shoulder) in a daring, seductive way—do it quick and dramatic, like an immortal teasing the mortals around you.</div>
+        </div>
+        <div class="activity">
+            <div class="activity-header">
+                <input type="checkbox" id="activity26" onchange="updatePoints()">
+                <label for="activity26" class="name">Sip in the Dungeon</label>
+                <span class="points">3</span>
+            </div>
+            <div class="description">Order a drink at the final destination’s downstairs bar (known for its dark ambiance) and sip it slowly while lounging on a comfy couch or near secluded areas, exuding mysterious immortal energy.</div>
+        </div>
+        <div class="activity">
+            <div class="activity-header">
+                <input type="checkbox" id="activity27" onchange="updatePoints()">
+                <label for="activity27" class="name">Toast on the Tower</label>
+                <span class="points">3</span>
+            </div>
+            <div class="description">Head to the red-hued upstairs area at the final destination, where there’s a tower-like feature, and raise your drink in a dramatic toast to “eternal nights” with a fellow immortal—make it loud enough to echo.</div>
+        </div>
+        <div class="activity">
+            <div class="activity-header">
+                <input type="checkbox" id="activity28" onchange="updatePoints()">
+                <label for="activity28" class="name">Seduce with Absinthe</label>
+                <span class="points">5</span>
+            </div>
+            <div class="description">Order an absinthe drink at the final destination, perform the ritual of preparing it with a sugar cube and water, and offer a sip to someone with a sultry line like, “Taste the forbidden, darling.”</div>
+        </div>
+        <div class="activity">
+            <div class="activity-header">
+                <input type="checkbox" id="activity29" onchange="updatePoints()">
+                <label for="activity29" class="name">Flirt at the Moat Bar</label>
+                <span class="points">4</span>
+            </div>
+            <div class="description">Order a drink at the final destination’s downstairs bar (once known for a water feature) and flirt with the bartender or a guest while leaning against the bar’s uneven surface—don’t spill, despite the tricky counter!</div>
+        </div>
+        <div class="activity">
+            <div class="activity-header">
+                <input type="checkbox" id="activity30" onchange="updatePoints()">
+                <label for="activity30" class="name">Claim a Drink in the VIP Cell</label>
+                <span class="points">5</span>
+            </div>
+            <div class="description">If the final destination’s secluded VIP areas are open, sit in one with a drink, sip it regally as if you’re an immortal ruler, and invite another guest to join you with a commanding, “Kneel and share my elixir.”</div>
+        </div>
+        <div id="total-points">Total Points: 0/100</div>
+    </div>
+    <script>
+        function updatePoints() {
+            const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+            let total = 0;
+            checkboxes.forEach((checkbox, index) => {
+                if (checkbox.checked) {
+                    const points = parseInt(checkbox.parentElement.parentElement.querySelector('.points').textContent);
+                    total += points;
+                }
+            });
+            document.getElementById('total-points').textContent = `Total Points: ${total}/100`;
+        }
+    </script>
+</body>
+</html>
